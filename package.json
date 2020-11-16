@@ -1,0 +1,41 @@
+{
+  "name": "comp_sci_dep",
+  "version": "1.0.0",
+  "description": "computer science department",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GithungoIan/comp_sci_dep.git"
+  },
+  "author": "Ian Githungo",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/GithungoIan/comp_sci_dep/issues"
+  },
+  "homepage": "https://github.com/GithungoIan/comp_sci_dep#readme",
+  "dependencies": {
+    "@babel/polyfill": "^7.12.1",
+    "axios": "^0.21.0",
+    "bcryptjs": "^2.4.3",
+    "compression": "^1.7.4",
+    "cookie-parser": "^1.4.5",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "express-mongo-sanitize": "^2.0.0",
+    "express-rate-limit": "^5.1.3",
+    "helmet": "^4.2.0",
+    "hpp": "^0.2.3",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.10.14",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.2",
+    "pug": "^3.0.0",
+    "sharp": "^0.26.2",
+    "slugify": "^1.4.6",
+    "validator": "^13.1.17",
+    "xss-clean": "^0.1.1"
+  }
+}
