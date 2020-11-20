@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const {promisify} = require('util');
 const jwt = require('jsonwebtoken');
-const Student = require('../models/studentModel');
+const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const Email = require('../utils/email');
@@ -13,8 +13,8 @@ const signToken = (id) => {
   });
 };
 
-const createSendToken = (student, statusCode, res) => {
-  const token = signToken(student._id);
+const createSendToken = (user, statusCode, res) => {
+  const token = signToken(user._id);
 
   const cookieOptions = {
     expires: new Date(
@@ -29,20 +29,20 @@ const createSendToken = (student, statusCode, res) => {
 
   res.cookie('jwt', token, cookieOptions);
 
-  student.password = undefined;
+  user.password = undefined;
 
   res.status(statusCode).json({
     status: 'success',
     token,
     data: {
-      student
+      user
     }
   });
 };
 
 // signup
 exports.signup = catchAsync(async (req, res, next) => {
-  const newStudent = await Student.create({
+  const newUser = await User.create({
     name: req.body.name,
     regNumber: req.body.regNumber,
     email: req.body.email,
@@ -51,13 +51,13 @@ exports.signup = catchAsync(async (req, res, next) => {
   });
 
   const url = `${req.protocol}://${req.get('host')}/account`;
-  await new Email(newStudent, url).sendWelcome();
+  await new Email(newUser, url).sendWelcome();
 
-  // send student response
+  // send user response
   return res.status(201).json({
     status: 'success',
     data: {
-      newStudent
+      newUser
     }
   });
 });
@@ -71,15 +71,15 @@ exports.login = catchAsync(async(req, res, next) => {
   if(!email || !password){
     return next(new AppError('Please provide email and passwod', 404));
   }
-  // 2) check if student exist and password is correct
-  const student = await Student.findOne({email}).select('+password');
+  // 2) check if user exist and password is correct
+  const user = await User.findOne({email}).select('+password');
 
-  if(!student || !(await student.correctPassword(passwod, student.password))){
+  if(!user || !(await user.correctPassword(passwod, user.password))){
     return next(new AppError('Incorrect email or password', 401));
   }
 
-  // 3) if ok send token to student
-  createSendToken(student, 200, res);
+  // 3) if ok send token to user
+  createSendToken(user, 200, res);
 });
 
 // logout
@@ -115,25 +115,25 @@ exports.protect = catchAsync(async (req, res, next) => {
   // 2) token verification
   const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
-  // 3) check if the student stil exists
-  const freshStudent = await Student.findById(decoded.id);
-  if (!freshStudent) {
+  // 3) check if the user stil exists
+  const freshUser = await User.findById(decoded.id);
+  if (!freshUser) {
     return next(
-      new AppError('The student belonging to the token no longer exists.', 401)
+      new AppError('The user belonging to the token no longer exists.', 401)
     );
   }
 
-  // 4) Chek if student changed password after the token was issued
+  // 4) Chek if user changed password after the token was issued
 
-  if(freshStudent.changedPasswordsAfter(decoded.iat)){
+  if(freshUser.changedPasswordsAfter(decoded.iat)){
     return next(
-      new AppError('The student recently changed the password! Please login again')
+      new AppError('The user recently changed the password! Please login again')
     );
   }
 
   // 5) grant acces to the protected route
-  req.student = freshStudent;
-  req.locals.student = freshStudent;
+  req.user = freshUser;
+  req.locals.user = freshUser;
   return next();
 });
 
@@ -147,20 +147,20 @@ exports.isLoggedIn = async(req, res, next) => {
         process.env.JWT_SECRET
       );
 
-      // 2) Check if student still exists
-      const freshStudent = await Student.findById(decoded.id);
+      // 2) Check if user still exists
+      const freshUser = await User.findById(decoded.id);
 
-      if(!freshStudent){
+      if(!freshUser){
         return next();
       }
 
       //  3) check if use changed password after the oken was issued
-      if(freshStudent.changedPasswordsAfter(decoded.iat)){
+      if(freshUser.changedPasswordsAfter(decoded.iat)){
         return next();
       }
 
-      // 4) there is LOGGED IN STUDENT
-      res.locals.student = freshStudent;
+      // 4) there is LOGGED IN User
+      res.locals.user = freshUser;
       return next();
 
     } catch (err){
@@ -172,7 +172,7 @@ exports.isLoggedIn = async(req, res, next) => {
 
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {
-    if(!roles.includes(req.student.role)){
+    if(!roles.includes(req.user.role)){
       return next(
         new AppError('You do not have permission to perform this action.', 401)
       );
@@ -182,22 +182,22 @@ exports.restrictTo = (...roles) => {
 }
 
 exports.forgotPassword = catchAsync(async (req, res, next) => {
-  // Get the student based on the email
-  const student = await Student.findOne({email: req.body.email});
-  if(!student){
-    return next(new AppError('There is no student with that email address', 404));
+  // Get the user based on the email
+  const user = await User.findOne({email: req.body.email});
+  if(!user){
+    return next(new AppError('There is no user with that email address', 404));
   }
 
   // Generate the random reset token
-  const resetToken = student.createPasswordResetToken();
-  await student.save({ validateBeforeSave: false });
+  const resetToken = user.createPasswordResetToken();
+  await user.save({ validateBeforeSave: false });
 
-  // 3) Send it to the student's email
+  // 3) Send it to the user's email
   try{
     const resetURL = `${req.protocol}://${req.get(
     'host'
-    )}/api/v1/students/resetPassword/${resetToken}`;
-    await new Email(student, resetURL).sendResetPassword();
+    )}/api/v1/users/resetPassword/${resetToken}`;
+    await new Email(user, resetURL).sendResetPassword();
 
     res.status(200).json({
       status: 'success',
@@ -205,10 +205,10 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
     });
 
   } catch (err) {
-    student.passwordResetToken = undefined;
-    student.PasswordResetExpires = undefined;
+    user.passwordResetToken = undefined;
+    user.PasswordResetExpires = undefined;
 
-    await student.save({ validateBeforeSave: false });
+    await user.save({ validateBeforeSave: false });
 
     return next(
       new AppError(
@@ -225,41 +225,41 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
     .createHash('sha256')
     .update(req.params.token)
     .digest('hex');
-  const student = await Student.findOne({
+  const user = await User.findOne({
     passwordResetToken: hashedToken,
     PasswordResetExpires: {$gt: Date.now()}
   });
 
-  // 2) If token has not expired and there is a student, set password
-  if(!student) {
+  // 2) If token has not expired and there is a user, set password
+  if(!user) {
     return next(new AppError('Token is invalid or has Expired', 400));
   }
-  student.password = req.body.password;
-  student.passwordConfirm = req.body.passwordConfirm;
-  student.passwordResetToken = undefined;
-  student.passwordResetExpires = undefined;
-  await student.save();
-  // 3) Update changedPasswordsAt property for the student
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+  await user.save();
+  // 3) Update changedPasswordsAt property for the user
 
-  // 4) log he student in send jwt
-  createSendToken(student, 200, res);
+  // 4) log he user in send jwt
+  createSendToken(user, 200, res);
 });
 
 
 exports.updatePassword = catchAsync(async(req, res, next) => {
-  // 1) Get student from collection
-  const student = await Student.findById(req.student.id).select('+passwod');
+  // 1) Get user from collection
+  const user = await User.findById(req.user.id).select('+passwod');
 
   // 2) Check if posted passwod if correct
-  if (!(await student.correctPassword(req.body.passwordCurent, student.password))) {
+  if (!(await user.correctPassword(req.body.passwordCurent, user.password))) {
     return next(new AppError('Your current password is wrong.', 401));
   }
 
   // 3) If so update password
-  student.password = req.body.password;
-  student.passwordConfirm = req.body.passwordConfirm;
-  await student.save();
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm;
+  await user.save();
 
-  // 4) Log student in, send jwt
-  createSendToken(student, 200, res);
+  // 4) Log user in, send jwt
+  createSendToken(user, 200, res);
 });
