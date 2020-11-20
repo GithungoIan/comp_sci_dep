@@ -50,8 +50,8 @@ exports.signup = catchAsync(async (req, res, next) => {
     passwordConfirm: req.body.passwordConfirm
   });
 
-  const url = `${req.protocol}://${req.get('host')}/account`;
-  await new Email(newUser, url).sendWelcome();
+  // const url = `${req.protocol}://${req.get('host')}/account`;
+  // await new Email(newUser, url).sendWelcome();
 
   // send user response
   return res.status(201).json({
@@ -66,15 +66,15 @@ exports.signup = catchAsync(async (req, res, next) => {
 // login
 exports.login = catchAsync(async(req, res, next) => {
   // destructuring
-  const {email, passwod} = req.body;
+  const {email, password} = req.body;
   // 1) check if the email and password exists
   if(!email || !password){
-    return next(new AppError('Please provide email and passwod', 404));
+    return next(new AppError('Please provide email and password', 404));
   }
   // 2) check if user exist and password is correct
   const user = await User.findOne({email}).select('+password');
 
-  if(!user || !(await user.correctPassword(passwod, user.password))){
+  if(!user || !(await user.correctPassword(password, user.password))){
     return next(new AppError('Incorrect email or password', 401));
   }
 
@@ -194,10 +194,10 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 
   // 3) Send it to the user's email
   try{
-    const resetURL = `${req.protocol}://${req.get(
-    'host'
-    )}/api/v1/users/resetPassword/${resetToken}`;
-    await new Email(user, resetURL).sendResetPassword();
+    // const resetURL = `${req.protocol}://${req.get(
+    // 'host'
+    // )}/api/v1/users/resetPassword/${resetToken}`;
+    // await new Email(user, resetURL).sendResetPassword();
 
     res.status(200).json({
       status: 'success',
