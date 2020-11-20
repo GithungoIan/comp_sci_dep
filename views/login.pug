@@ -1,0 +1,23 @@
+extends base
+block content
+  main.main
+    section.login__section
+      .container.grid
+        .my-2.p-2
+          .header__section
+            h2.md.text-center.my-2 Welcome Back
+          .user-view__form
+            .card
+              form.form.form__login.my-1
+                .form__group.p-1
+                  label.form__label(for="email") Email address
+                  input#email.form__input(type="email" required="" name="email")
+                .form__group.p-1
+                  label.form__label(for="password")  Password
+                  input#password.form__input(type="password" placeholder="••••••••" required="" minlength="8")
+                .form__group.my-1.p-3
+                  button.btn.btn--small.btn--save-password Login
+                  a.my-1.text-primary(href='/forgotPassword')
+                    h4.my-1 forgotPassword?
+                  h4.my-1 Don't have an account?
+                    a.text-primary.m-1(href='/signup') Sign Up

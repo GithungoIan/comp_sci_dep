@@ -1,0 +1,24 @@
+.navbar
+  .container.flex
+    h1.logo
+      a(href='/') Fantastic Tutors
+    nav.nav
+      ul
+        if user 
+          li
+            a(href='/overview') overview
+          li
+            a(href='/account')
+                img.nav__user-img(src=`/images/users/${user.photo}` alt=`${user.name}`)
+          li
+            a.nav__el.logout__btn Logout
+        else
+          
+          li
+            a(href='/login') Login
+          li
+            a(href='/signup') Signup
+      .burger
+        span
+        span
+        span
