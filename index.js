@@ -12,7 +12,7 @@ const globalErrorHandler = require('./controllers/errorController');
 const userRouter = require('./routes/userRoutes');
 const viewRouter = require('./routes/viewRoutes');
 
-const app = req express();
+const app = express();
 
 
 app.set('view engine', 'pug');

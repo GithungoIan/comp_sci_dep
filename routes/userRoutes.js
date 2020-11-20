@@ -2,14 +2,14 @@ const express = require('express');
 const userController = require('../controllers/userController');
 const authController = require('../controllers/authController');
 
-const router = express.router();
+const router = express.Router();
 
 // authentication
-router.post('/signup', authContoller.signup);
-router.post('/login', authContoller.login);
-router.get('/logout', authContoller.logout);
-router.post('/forgotPassword', authContoller.forgotPassword);
-router.patch('/resetPassword/:token', authContoller.resetPassword);
+router.post('/signup', authController.signup);
+router.post('/login', authController.login);
+router.get('/logout', authController.logout);
+router.post('/forgotPassword', authController.forgotPassword);
+router.patch('/resetPassword/:token', authController.resetPassword);
 
 
 // protect all the routes
@@ -18,8 +18,8 @@ router.patch('/updateMyPassword', authController.updatePassword);
 router.get('/me', userController.getUser);
 router.patch(
   '/updateMe',
-  authController.uploadUserPhoto,
-  authController.resizeUserPhoto,
+  userController.uploadUserPhoto,
+  userController.resizeUserPhoto,
   userController.updateMe
 );
 
@@ -29,7 +29,7 @@ router.route('/').get(userController.getAllUsers);
 router.route(
   '/:id')
   .get(userController.getUser)
-  .patch(userController.updatedUser)
+  .patch(userController.updateUser)
   .delete(userController.deleteUser);
-  
+
 module.exports = router;
