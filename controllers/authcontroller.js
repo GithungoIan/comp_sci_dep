@@ -218,3 +218,29 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
     );
   }
 });
+
+exports.resetPassword = catchAsync(async (req, res, next) => {
+  // 1) Get the stuent based on the token
+  const hashedToken = crypto
+    .createHash('sha256')
+    .update(req.params.token)
+    .digest('hex');
+  const student = await Student.findOne({
+    passwordResetToken: hashedToken,
+    PasswordResetExpires: {$gt: Date.now()}
+  });
+
+  // 2) If token has not expired and there is a student, set password
+  if(!student) {
+    return next(new AppError('Token is invalid or has Expired', 400));
+  }
+  student.password = req.body.password;
+  student.passwordConfirm = req.body.passwordConfirm;
+  student.passwordResetToken = undefined;
+  student.passwordResetExpires = undefined;
+  await student.save();
+  // 3) Update changedPasswordsAt property for the student
+
+  // 4) log he student in send jwt
+  createSendToken(student, 200, res);
+});
