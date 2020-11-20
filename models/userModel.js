@@ -10,7 +10,8 @@ const userSchema = new mongoose.Schema({
   },
   regNumber: {
     type: String,
-    required: [true, 'Please tell us your registration number']
+    required: [true, 'Please tell us your registration number'],
+    unique: true,
   },
   email: {
     type: String,
@@ -97,6 +98,7 @@ userSchema.methods.correctPassword = async function (
 ){
   return await bcrypt.compare(candidatePassword, studentPassword);
 }
+
 
 // 2) cheking if the user changed the password
 userSchema.methods.changedPasswordsAfter = function (JWTTimestamp) {
