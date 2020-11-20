@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const studentSchema = new mongoose.Schema({
   name: {
@@ -58,6 +60,71 @@ const studentSchema = new mongoose.Schema({
   },
 });
 
+// Socument Middleware
+
+studentSchema.pre('save', async function(next) {
+  // only run this function if password is modified
+  if(!this.isModified('password')) return next();
+
+  // Encrtypt or hash the password
+  // Either use a cost parameter or you cabn salt the hash
+  this.password = await bcrypt.hash(this.password, 12);
+  // delete the passwordConfirm
+  this.passwordConfirm = undefined;
+  next();
+});
+
+
+// student changed their password
+studentSchema.pre('save', function(next){
+  if(!this.isModified('password') || this.isNew) return next();
+  // takes some time to save to db so minus 1 second
+  this.passwordChangeAt = Date.now() -1000;
+});
+
+// find students
+studentSchema.pre(/^find/, function(next){
+  // this points to the current user
+  this.find({active: {$ne: false}});
+  next();
+});
+
+// **** instance method ****
+// 1) Check if the passwords are correct
+studentSchema.methods.correctPassword = async function (
+  candidatePassword,
+  studentPassword
+){
+  return await bcrypt.compare(candidatePassword, studentPassword);
+}
+
+// 2) cheking if the user changed the password
+studentSchema.methods.changedPasswordsAfter = function (JWTTimestamp) {
+  if (this.passwordChangeAt) {
+    const changedTimeStamp = parseInt(
+      this.passwordChangeAt.getTime() / 1000,
+      10
+    );
+    return JWTTimestamp < changedTimeStamp;
+  }
+
+  //False means NOT changed
+  return false;
+};
+
+// 3) sending password reset token
+studentSchema.methods.createPasswordResetToken = function () {
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  this.passwordResetToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+  // console.log({ resetToken }, this.passwordResetToken);
+  // passwod reset token expires after 10min
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+
+  return resetToken;
+};
 
 const User = mongoose.model('User', userSchema);
 module.exports = User;
