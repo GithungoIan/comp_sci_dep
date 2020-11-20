@@ -244,3 +244,22 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   // 4) log he student in send jwt
   createSendToken(student, 200, res);
 });
+
+
+exports.updatePassword = catchAsync(async(req, res, next) => {
+  // 1) Get student from collection
+  const student = await Student.findById(req.student.id).select('+passwod');
+
+  // 2) Check if posted passwod if correct
+  if (!(await student.correctPassword(req.body.passwordCurent, student.password))) {
+    return next(new AppError('Your current password is wrong.', 401));
+  }
+
+  // 3) If so update password
+  student.password = req.body.password;
+  student.passwordConfirm = req.body.passwordConfirm;
+  await student.save();
+
+  // 4) Log student in, send jwt
+  createSendToken(student, 200, res);
+});
