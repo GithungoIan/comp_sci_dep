@@ -1,7 +1,26 @@
+const multer = require('multer');
 const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const factory = require('./handlerFactroy');
+
+// multer configs
+const multerStorage = multer.memoryStorage();
+const multerFilter = (req, file, cb) => {
+  if(file.mimetype.startsWith('image')){
+    cb(null, true);
+  } else {
+    cb(new AppError('Not an image please upload only images', 404), false);
+  }
+};
+
+const upload = multer({
+  storage: multerStorage,
+  fileFilter:  multerFilter
+});
+
+exports.uploadUserPhoto = upload.single('photo');
+
 
 exports.getAllUsers = factory.getAll(User);
 exports.getUser = factory.getOne(User);
